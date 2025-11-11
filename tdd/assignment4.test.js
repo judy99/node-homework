@@ -53,13 +53,13 @@ describe("testing login, register, and logoff", () => {
       body: { email: "jim@sample.com", password: "Pa$$word20" },
     });
     saveRes = httpMocks.createResponse();
-    await login(req, saveRes); // no need for await here
+    await login(req, saveRes); 
     expect(saveRes.statusCode).toBe(200); // success!
   });
 
   it("returns the expected name.", () => {
     saveData = saveRes._getJSONData();
-    expect(saveData.name).toBe("Bob");
+    expect(saveData.user.name).toBe("Jim");
   });
   it("A logon attempt with a bad password returns a 401", async () => {
     const req = httpMocks.createRequest({
@@ -89,9 +89,7 @@ describe("testing login, register, and logoff", () => {
       body: { email: "manuel@sample.com", password: "Pa$$word20" },
     });
     saveRes = httpMocks.createResponse();
-    const jsonPromise = saveRes.jsonPromise();
-    login(req, saveRes);
-    await jsonPromise;
+    await login(req, saveRes);
     expect(saveRes.statusCode).toBe(200);
   });
   it("You can now logoff.", async () => {
@@ -106,6 +104,7 @@ describe("testing login, register, and logoff", () => {
 
 describe("testing task creation", () => {
   it("If you have a valid user id, create() succeeds (res.statusCode should be 201).", async () => {
+    setLoggedOnUser(user1);
     const req = httpMocks.createRequest({
       method: "POST",
       body: { title: "first task" },
