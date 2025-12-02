@@ -1,5 +1,3 @@
-// const path = require("path");
-
 const logger = (req, res, next) => {
   const now = new Date();
   const date = now.toLocaleDateString("en-US");

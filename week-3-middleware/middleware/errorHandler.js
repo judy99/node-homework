@@ -1,9 +1,5 @@
 const { StatusCodes } = require("http-status-codes");
-const {
-  UnauthorizedError,
-  NotFoundError,
-  ValidationError,
-} = require("../errors");
+const { UnauthorizedError, ValidationError } = require("../errors");
 
 const errorHandlerMiddleware = (err, req, res, next) => {
   console.error(
@@ -13,11 +9,7 @@ const errorHandlerMiddleware = (err, req, res, next) => {
   );
 
   if (!res.headersSent) {
-    if (
-      err instanceof ValidationError ||
-      err instanceof NotFoundError ||
-      err instanceof UnauthorizedError
-    ) {
+    if (err instanceof ValidationError || err instanceof UnauthorizedError) {
       return res.status(err.statusCode).send(err.message);
     } else {
       return res
