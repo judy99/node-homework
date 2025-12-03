@@ -1,22 +1,31 @@
 const { StatusCodes } = require("http-status-codes");
-const { UnauthorizedError, ValidationError } = require("../errors");
+const loggerHelper = require("../loggerHelper");
+const {
+  UnauthorizedError,
+  ValidationError,
+  NotFoundError,
+} = require("../errors");
 
-const errorHandlerMiddleware = (err, req, res, next) => {
-  console.error(
-    "************Error****************\n",
-    err.constructor.name,
-    JSON.stringify(err, ["name", "message", "stack"])
-  );
+const errorHandler = (err, req, res, next) => {
+  loggerHelper(req, err);
 
   if (!res.headersSent) {
-    if (err instanceof ValidationError || err instanceof UnauthorizedError) {
-      return res.status(err.statusCode).send(err.message);
+    if (
+      err instanceof NotFoundError ||
+      err instanceof ValidationError ||
+      err instanceof UnauthorizedError
+    ) {
+      return res.status(err.statusCode).json({
+        error: err.message,
+        requestId: req.requestId,
+      });
     } else {
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send(err.message || "An internal server error occurred.");
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        error: "Internal Server Error",
+        requestId: req.requestId,
+      });
     }
   }
 };
 
-module.exports = errorHandlerMiddleware;
+module.exports = errorHandler;
