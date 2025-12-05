@@ -24,6 +24,7 @@ if (!user) {
         newTask.userId = user.id;
         newTask.createdAt = getRandomDateTimeLast5Weeks();
         newTask.isCompleted = (Math.random() > 0.5); 
+        newTask.priority = ["low","medium","high"][Math.floor(Math.random()*3)];
         tasks.push(newTask);
         i++;
     }
