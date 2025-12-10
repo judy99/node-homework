@@ -1,8 +1,15 @@
 const express = require("express");
 const errorHandler = require("./middleware/error-handler");
 const errorHandlerNotFound = require("./middleware/not-found");
+const userRouter = require("./routes/userRoutes");
+
+global.user_id = null;
+global.users = [];
+global.tasks = [];
 
 const app = express();
+
+app.use(express.json({ limit: "1kb" }));
 
 app.use((req, res, next) => {
   console.log("req.method: ", req.method);
@@ -18,9 +25,7 @@ app.get("/", (req, res) => {
   // throw new Error("something bad happened!");
 });
 
-app.post("/testpost", (req, res) => {
-  res.send("Hello, post method!");
-});
+app.use("/api/users", userRouter);
 
 app.use(errorHandlerNotFound);
 app.use(errorHandler);
