@@ -4,7 +4,7 @@ const dogs = require("../dogData.js");
 const { ValidationError, NotFoundError } = require("../errors.js");
 
 router.get("/dogs", (req, res) => {
-  res.json(dogs);
+  res.status(200).json(dogs);
 });
 
 router.post("/adopt", (req, res) => {
@@ -13,7 +13,8 @@ router.post("/adopt", (req, res) => {
     throw new ValidationError("Missing required fields");
   }
 
-  if (dogName === "Nonexistent Dog") {
+  const dog = dogs.find((d) => d.name === dogName);
+  if (!dog || dog.status !== "available") {
     throw new NotFoundError("Resource not found or not available");
   }
 
