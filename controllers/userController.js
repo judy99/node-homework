@@ -1,29 +1,71 @@
 const StatusCodes = require("http-status-codes");
+const { userSchema } = require("../validation/userSchema");
+const crypto = require("crypto");
+const util = require("util");
+const scrypt = util.promisify(crypto.scrypt);
 
-function register(req, res) {
-  const newUser = { ...req.body }; // this makes a copy
-  global.users.push(newUser);
-  global.user_id = newUser; // After the registration step, the user is set to logged on.
-  delete req.body.password;
-  res.status(StatusCodes.CREATED).json(req.body);
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derivedKey = await scrypt(password, salt, 64);
+  return `${salt}:${derivedKey.toString("hex")}`;
 }
 
-function logon(req, res) {
-  const user = global.users.find((user) => user.email === req.body.email);
-  if (user && user.password === req.body.password) {
-    global.user_id = user; // the user is set to logged on.
+async function comparePassword(inputPassword, storedHash) {
+  const [salt, key] = storedHash.split(":");
+  const keyBuffer = Buffer.from(key, "hex");
+  const derivedKey = await scrypt(inputPassword, salt, 64);
+  return crypto.timingSafeEqual(keyBuffer, derivedKey);
+}
+
+async function register(req, res) {
+  if (!req.body) req.body = {};
+  const { error, value } = userSchema.validate(req.body, { abortEarly: false });
+  if (error)
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
+
+  try {
+    if (value.password) {
+      const hashedPassword = await hashPassword(value.password);
+      if (hashedPassword) {
+        value.password = hashedPassword;
+        global.users.push(value);
+        global.user_id = value; // After the registration step, the user is set to logged on.
+        const { password, ...sanitizedUser } = value;
+        return res.status(StatusCodes.CREATED).json(sanitizedUser);
+      }
+    }
+  } catch (error) {
     return res
-      .status(StatusCodes.OK)
-      .json({ name: user.name, email: user.email });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: error.message });
   }
-  return res
-    .status(StatusCodes.UNAUTHORIZED)
-    .json({ message: "Authentication Failed" });
+}
+
+async function logon(req, res) {
+  const user = global.users.find((user) => user.email === req.body.email);
+  try {
+    if (user) {
+      const isMatch = await comparePassword(req.body.password, user.password);
+      if (isMatch) {
+        global.user_id = user; // the user is set to logged on.
+        return res
+          .status(StatusCodes.OK)
+          .json({ name: user.name, email: user.email });
+      }
+    }
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "Authentication Failed" });
+  } catch (err) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: err.message });
+  }
 }
 
 function logoff(req, res) {
   global.user_id = null; // the user is set to null.
-  res.sendStatus(StatusCodes.OK);
+  return res.sendStatus(StatusCodes.OK);
 }
 
 module.exports = { register, logon, logoff };
