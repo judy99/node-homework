@@ -65,7 +65,6 @@ async function logon(req, res) {
 
   const { email, password } = req.body;
 
-  // const user = global.users.find((user) => user.email === req.body.email);
   const result = await pool.query("SELECT * FROM users WHERE email = $1", [
     email,
   ]);
@@ -75,14 +74,11 @@ async function logon(req, res) {
       .status(StatusCodes.UNAUTHORIZED)
       .json({ message: "Authentication Failed" });
   }
-
   const user = result.rows[0];
-
   try {
     if (user) {
       const isMatch = await comparePassword(password, user.hashed_password);
       if (isMatch) {
-        // global.user_id = user; // the user is set to logged on.
         global.user_id = user.id; // the user is set to logged on.
         return res
           .status(StatusCodes.OK)
