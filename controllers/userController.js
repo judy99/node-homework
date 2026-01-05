@@ -3,7 +3,7 @@ const { userSchema } = require("../validation/userSchema");
 const crypto = require("crypto");
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
-const pool = require("../db/pg-pool");
+const prisma = require("../db/prisma");
 
 async function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -28,31 +28,28 @@ async function register(req, res, next) {
     });
   }
 
+  value.hashedPassword = await hashPassword(value.password);
+  const { name, email, hashedPassword } = value;
+
   let user = null;
-  value.hashed_password = await hashPassword(value.password);
   try {
-    user = await pool.query(
-      `INSERT INTO users (email, name, hashed_password) 
-      VALUES ($1, $2, $3) RETURNING id, email, name`,
-      [value.email, value.name, value.hashed_password]
-    );
-    // note that you use a parameterized query
-    global.user_id = user.rows[0].id;
+    user = await prisma.user.create({
+      data: { name, email, hashedPassword },
+      select: { name: true, email: true, id: true }, // specify the column values to return
+    });
+    global.user_id = user.id;
     return res
       .status(StatusCodes.CREATED)
-      .json({ name: user.rows[0].name, email: user.rows[0].email });
-  } catch (e) {
-    // the email might already be registered
-    if (e.code === "23505") {
-      return res.status(400).json({ message: "Email is already registered." });
-      // this means the unique constraint for email was violated
-      // here you return the 400 and the error message.  Use a return statement, so that
-      // you don't keep going in this function
+      .json({ name: user.name, email: user.email });
+  } catch (err) {
+    if (err.name === "PrismaClientKnownRequestError" && err.code == "P2002") {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Email was already registered" });
+    } else {
+      return next(err); // the error handler takes care of other erors
     }
-    return next(e); // all other errors get passed to the error handler
   }
-  // othewise newUser now contains the new user.  You can return a 201 and the appropriate
-  // object.  Be sure to also set global.user_id with the id of the user record you just created.
 }
 
 async function logon(req, res) {
@@ -63,21 +60,22 @@ async function logon(req, res) {
       .json({ message: "Email and password are required." });
   }
 
-  const { email, password } = req.body;
+  const email = req.body.email.toLowerCase();
+  const password = req.body.password;
 
-  const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-    email,
-  ]);
+  const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!result.rows.length) {
+  const storedHash = user.hashedPassword || user.hashed_password;
+
+  if (!user || !storedHash) {
     return res
       .status(StatusCodes.UNAUTHORIZED)
       .json({ message: "Authentication Failed" });
   }
-  const user = result.rows[0];
+
   try {
     if (user) {
-      const isMatch = await comparePassword(password, user.hashed_password);
+      const isMatch = await comparePassword(password, storedHash);
       if (isMatch) {
         global.user_id = user.id; // the user is set to logged on.
         return res
