@@ -7,7 +7,19 @@ async function index(req, res) {
     where: {
       userId: global.user_id, // only the tasks for this user!
     },
-    select: { title: true, isCompleted: true, id: true },
+    select: {
+      id: true,
+      title: true,
+      isCompleted: true,
+      priority: true,
+      createdAt: true,
+      User: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
   });
   if (!tasks.length) {
     return res
@@ -30,7 +42,7 @@ async function show(req, res, next) {
         id: taskId,
         userId: global.user_id,
       },
-      select: { title: true, isCompleted: true, id: true },
+      select: { title: true, isCompleted: true, priority: true, id: true },
     });
     return res.json(task);
   } catch (err) {
@@ -48,14 +60,14 @@ async function create(req, res, next) {
   if (error)
     return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
 
-  const { title, isCompleted } = value;
+  const { title, isCompleted, priority } = value;
   const userId = global.user_id;
 
   let task = null;
   try {
     task = await prisma.task.create({
-      data: { title, isCompleted, userId },
-      select: { title: true, isCompleted: true, id: true }, // specify the column values to return
+      data: { title, isCompleted, priority, userId },
+      select: { title: true, isCompleted: true, priority: true, id: true }, // specify the column values to return
     });
     return res.status(StatusCodes.CREATED).json(task);
   } catch (err) {
@@ -77,7 +89,7 @@ async function deleteTask(req, res, next) {
         id: taskId,
         userId: global.user_id,
       },
-      select: { title: true, isCompleted: true, id: true },
+      select: { title: true, isCompleted: true, priority: true, id: true },
     });
     return res.json(task);
   } catch (err) {
@@ -113,7 +125,7 @@ async function update(req, res, next) {
         id: taskIdToUpdate,
         userId: global.user_id,
       },
-      select: { title: true, isCompleted: true, id: true },
+      select: { title: true, isCompleted: true, priority: true, id: true },
     });
     return res.json(task);
   } catch (err) {
