@@ -3,10 +3,14 @@ const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
 const prisma = require("../db/prisma");
 
 async function index(req, res) {
+  // Parse pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Get tasks with pagination and eager loading
   const tasks = await prisma.task.findMany({
-    where: {
-      userId: global.user_id, // only the tasks for this user!
-    },
+    where: { userId: global.user_id },
     select: {
       id: true,
       title: true,
@@ -20,13 +24,31 @@ async function index(req, res) {
         },
       },
     },
+    skip: skip,
+    take: limit,
+    orderBy: { createdAt: "desc" },
   });
-  if (!tasks.length) {
-    return res
-      .status(404)
-      .json({ message: "No tasks were find for logged in user" }); // return empty array if no tasks found
-  }
-  return res.status(200).json(tasks);
+
+  // Get total count for pagination metadata
+  const totalTasks = await prisma.task.count({
+    where: { userId: global.user_id },
+  });
+
+  // Build pagination object with complete metadata
+  const pagination = {
+    page,
+    limit,
+    total: totalTasks,
+    pages: Math.ceil(totalTasks / limit),
+    hasNext: page * limit < totalTasks,
+    hasPrev: page > 1,
+  };
+
+  // Return tasks with pagination information
+  return res.status(200).json({
+    tasks,
+    pagination,
+  });
 }
 
 async function show(req, res, next) {

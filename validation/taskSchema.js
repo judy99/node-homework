@@ -6,8 +6,7 @@ const taskSchema = Joi.object({
   priority: Joi.string()
     .default("medium")
     .valid("low", "medium", "high")
-    .not(null)
-    .required(),
+    .not(null),
 });
 
 const patchTaskSchema = Joi.object({
