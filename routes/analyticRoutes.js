@@ -2,7 +2,7 @@ const express = require("express");
 const {
   userProductivity,
   userTasks,
-} = require("../controllers/analyticController");
+} = require("../controllers/analyticsController");
 
 const router = express.Router();
 router.route("/users/:id").get(userProductivity);
