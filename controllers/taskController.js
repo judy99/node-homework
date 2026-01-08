@@ -2,6 +2,18 @@ const StatusCodes = require("http-status-codes");
 const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
 const prisma = require("../db/prisma");
 
+function createDynamicSelect(fieldsParam) {
+  if (!fieldsParam) return undefined;
+  const selectObj = {};
+  fieldsParam.split(",").forEach((field) => {
+    const trimmedField = field.trim();
+    // Handle specific logic for your Task relation if requested
+    selectObj[trimmedField] = true;
+  });
+
+  return selectObj;
+}
+
 async function index(req, res) {
   // Parse pagination parameters
   const page = parseInt(req.query.page) || 1;
@@ -18,15 +30,35 @@ async function index(req, res) {
     };
   }
 
-  // Get tasks with pagination and eager loading
-  const tasks = await prisma.task.findMany({
-    where: whereClause,
-    select: {
+  // dynamic fields
+  let selectFields;
+
+  if (req.query.fields) {
+    selectFields = createDynamicSelect(req.query.fields);
+    if (
+      !Object.keys(selectFields).every((key) =>
+        ["id", "title", "isCompleted", "priority", "createdAt"].includes(key)
+      )
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid field(s) in query parameters." });
+    }
+  } else {
+    selectFields = {
       id: true,
       title: true,
       isCompleted: true,
       priority: true,
       createdAt: true,
+    };
+  }
+
+  // Get tasks with pagination and eager loading
+  const tasks = await prisma.task.findMany({
+    where: whereClause,
+    select: {
+      ...selectFields,
       User: {
         select: {
           name: true,
