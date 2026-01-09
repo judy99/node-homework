@@ -1,11 +1,15 @@
 const prisma = require("../db/prisma");
 
-async function userProductivity(req, res) {
+async function getUserAnalytics(req, res) {
   const userId = parseInt(req.params.id);
   if (isNaN(userId)) {
     return res
       .status(400)
       .json({ message: "The task ID passed is not valid." });
+  }
+
+  if (!prisma.user.findUnique({ where: { id: userId } })) {
+    return res.status(404).json({ error: "User not found" });
   }
 
   // Use groupBy to count tasks by completion status
@@ -57,7 +61,7 @@ async function userProductivity(req, res) {
   return;
 }
 
-async function userTasks(req, res) {
+async function getUsersWithStats(req, res) {
   // Parse pagination parameters (similar to how you did in the task index method in section 3 above)
   // Hint: Parse page and limit from req.query, calculate skip
   // Parse pagination parameters
@@ -124,7 +128,7 @@ async function userTasks(req, res) {
   });
 }
 
-async function taskSearch(req, res) {
+async function searchTasks(req, res) {
   const searchQuery = req.query.q;
   if (!searchQuery || searchQuery.trim().length < 2) {
     return res.status(400).json({
@@ -174,4 +178,4 @@ async function taskSearch(req, res) {
   });
 }
 
-module.exports = { userProductivity, userTasks, taskSearch };
+module.exports = { getUserAnalytics, getUsersWithStats, searchTasks };

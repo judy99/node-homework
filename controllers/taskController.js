@@ -1,5 +1,7 @@
 const StatusCodes = require("http-status-codes");
 const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
+const { querySchema } = require("../validation/querySchema");
+
 const prisma = require("../db/prisma");
 
 function createDynamicSelect(fieldsParam) {
@@ -15,17 +17,26 @@ function createDynamicSelect(fieldsParam) {
 }
 
 async function index(req, res) {
-  // Parse pagination parameters
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const { error, value } = querySchema.validate(req.query, {
+    abortEarly: false,
+    convert: true,
+  });
+
+  if (error)
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      error: error.message,
+    });
+
+  const { page, limit, find } = value;
+
   const skip = (page - 1) * limit;
 
   // Build where clause with optional search filter
   const whereClause = { userId: global.user_id };
 
-  if (req.query.find) {
+  if (find) {
     whereClause.title = {
-      contains: req.query.find, // Matches %find% pattern
+      contains: find, // Matches %find% pattern
       mode: "insensitive", // Case-insensitive search (ILIKE in PostgreSQL)
     };
   }
@@ -106,8 +117,21 @@ async function show(req, res, next) {
         id: taskId,
         userId: global.user_id,
       },
-      select: { title: true, isCompleted: true, priority: true, id: true },
+      select: {
+        title: true,
+        isCompleted: true,
+        priority: true,
+        id: true,
+        User: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
+    if (!task)
+      return res.status(404).json({ message: "The task was not found." });
     return res.json(task);
   } catch (err) {
     if (err.code === "P2025") {
