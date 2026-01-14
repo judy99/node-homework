@@ -70,7 +70,7 @@ async function getUsersWithStats(req, res) {
   const skip = (page - 1) * limit;
 
   // Build where clause with optional search filter
-  const whereClause = { userId: global.user_id };
+  const whereClause = { userId: req.user.id };
 
   if (req.query.find) {
     whereClause.title = {
