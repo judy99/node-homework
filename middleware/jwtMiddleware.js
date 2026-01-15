@@ -9,10 +9,8 @@ const send401 = (res) => {
 
 module.exports = async (req, res, next) => {
   const token = req?.cookies?.jwt;
-  if (!token && req.path !== "/logon") {
+  if (!token) {
     return send401(res);
-  } else if (!token) {
-    return next();
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
@@ -25,10 +23,7 @@ module.exports = async (req, res, next) => {
     // don't use global.user_id any more!
     if (["POST", "PATCH", "PUT", "DELETE", "CONNECT"].includes(req.method)) {
       // for these operations we have to check for cross site request forgery
-      console.log("X-CSRF-TOKEN:::::", req.get("X-CSRF-TOKEN"));
-      console.log("decoded.csrfToken", decoded.csrfToken);
       if (req.get("X-CSRF-TOKEN") != decoded.csrfToken) {
-        // if (csrfToken != decoded.csrfToken) {
         return send401(res);
       }
     }
