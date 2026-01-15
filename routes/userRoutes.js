@@ -9,7 +9,7 @@ const {
 } = require("../controllers/userController");
 
 const router = express.Router();
-router.route("/").post(register);
+router.route("/register").post(register);
 
 router.use(jwtMiddleware);
 router.route("/logon").post(logon);
