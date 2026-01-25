@@ -5,7 +5,7 @@ async function getUserAnalytics(req, res) {
   if (isNaN(userId)) {
     return res
       .status(400)
-      .json({ message: "The task ID passed is not valid." });
+      .json({ message: "The user ID passed is not valid." });
   }
 
   if (!prisma.user.findUnique({ where: { id: userId } })) {
