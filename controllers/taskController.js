@@ -16,7 +16,7 @@ function createDynamicSelect(fieldsParam) {
   return selectObj;
 }
 
-async function index(req, res) {
+async function index(req, res, next) {
   const { error, value } = querySchema.validate(req.query, {
     abortEarly: false,
     convert: true,
