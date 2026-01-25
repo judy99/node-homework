@@ -9,10 +9,8 @@ const send401 = (res) => {
 
 module.exports = async (req, res, next) => {
   const token = req?.cookies?.jwt;
-  if (!token && req.path !== "/logon") {
+  if (!token) {
     return send401(res);
-  } else if (!token) {
-    return next();
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
