@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1769304425031" clover="3.2.0">
-  <project timestamp="1769304425031" name="All files">
-    <metrics statements="349" coveredstatements="233" conditionals="123" coveredconditionals="49" methods="42" coveredmethods="23" elements="514" coveredelements="305" complexity="0" loc="349" ncloc="349" packages="7" files="15" classes="15"/>
+<coverage generated="1769306739222" clover="3.2.0">
+  <project timestamp="1769306739222" name="All files">
+    <metrics statements="347" coveredstatements="232" conditionals="119" coveredconditionals="46" methods="42" coveredmethods="23" elements="508" coveredelements="301" complexity="0" loc="347" ncloc="347" packages="7" files="15" classes="15"/>
     <package name="node-homework">
       <metrics statements="63" coveredstatements="39" conditionals="7" coveredconditionals="2" methods="10" coveredmethods="2"/>
       <file name="app.js" path="/Users/lia/projects/CTD-25-26/node-homework/app.js">
@@ -292,7 +292,7 @@
       </file>
     </package>
     <package name="node-homework.middleware">
-      <metrics statements="32" coveredstatements="23" conditionals="20" coveredconditionals="11" methods="5" coveredmethods="3"/>
+      <metrics statements="30" coveredstatements="22" conditionals="16" coveredconditionals="8" methods="5" coveredmethods="3"/>
       <file name="error-handler.js" path="/Users/lia/projects/CTD-25-26/node-homework/middleware/error-handler.js">
         <metrics statements="10" coveredstatements="3" conditionals="8" coveredconditionals="0" methods="1" coveredmethods="0"/>
         <line num="1" count="1" type="stmt"/>
@@ -307,25 +307,23 @@
         <line num="28" count="1" type="stmt"/>
       </file>
       <file name="jwtMiddleware.js" path="/Users/lia/projects/CTD-25-26/node-homework/middleware/jwtMiddleware.js">
-        <metrics statements="18" coveredstatements="17" conditionals="12" coveredconditionals="11" methods="3" coveredmethods="3"/>
+        <metrics statements="16" coveredstatements="16" conditionals="8" coveredconditionals="8" methods="3" coveredmethods="3"/>
         <line num="1" count="2" type="stmt"/>
         <line num="2" count="2" type="stmt"/>
         <line num="4" count="2" type="stmt"/>
         <line num="5" count="4" type="stmt"/>
         <line num="10" count="2" type="stmt"/>
         <line num="11" count="7" type="stmt"/>
-        <line num="12" count="7" type="cond" truecount="4" falsecount="0"/>
+        <line num="12" count="7" type="cond" truecount="2" falsecount="0"/>
         <line num="13" count="2" type="stmt"/>
-        <line num="14" count="5" type="cond" truecount="1" falsecount="1"/>
-        <line num="15" count="0" type="stmt"/>
-        <line num="18" count="5" type="stmt"/>
-        <line num="20" count="5" type="cond" truecount="2" falsecount="0"/>
-        <line num="21" count="1" type="stmt"/>
-        <line num="23" count="4" type="stmt"/>
-        <line num="26" count="4" type="cond" truecount="2" falsecount="0"/>
-        <line num="28" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="29" count="1" type="stmt"/>
-        <line num="32" count="3" type="stmt"/>
+        <line num="16" count="5" type="stmt"/>
+        <line num="18" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="19" count="1" type="stmt"/>
+        <line num="21" count="4" type="stmt"/>
+        <line num="24" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="26" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="27" count="1" type="stmt"/>
+        <line num="30" count="3" type="stmt"/>
       </file>
       <file name="not-found.js" path="/Users/lia/projects/CTD-25-26/node-homework/middleware/not-found.js">
         <metrics statements="4" coveredstatements="3" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
