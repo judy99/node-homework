@@ -1,4 +1,6 @@
 const express = require("express");
+const jwtMiddleware = require("../middleware/jwtMiddleware");
+
 const {
   register,
   logon,
@@ -7,9 +9,11 @@ const {
 } = require("../controllers/userController");
 
 const router = express.Router();
-router.route("/").post(register);
-router.route("/:id").get(show);
+router.route("/register").post(register);
 router.route("/logon").post(logon);
+
+router.use(jwtMiddleware);
 router.route("/logoff").post(logoff);
+router.route("/:id").get(show);
 
 module.exports = router;
