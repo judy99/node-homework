@@ -1,4 +1,6 @@
 const express = require("express");
+const jwtMiddleware = require("../middleware/jwtMiddleware");
+
 const {
   create,
   deleteTask,
@@ -9,6 +11,7 @@ const {
 } = require("../controllers/taskController");
 
 const router = express.Router();
+router.use(jwtMiddleware);
 router.route("/").get(index);
 router.route("/bulk").post(bulkCreate);
 router.route("/:id").get(show);
