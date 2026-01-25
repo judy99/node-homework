@@ -48,7 +48,7 @@ async function index(req, res) {
     selectFields = createDynamicSelect(req.query.fields);
     if (
       !Object.keys(selectFields).every((key) =>
-        ["id", "title", "isCompleted", "priority", "createdAt"].includes(key)
+        ["id", "title", "isCompleted", "priority", "createdAt"].includes(key),
       )
     ) {
       return res
@@ -65,43 +65,56 @@ async function index(req, res) {
     };
   }
 
-  // Get tasks with pagination and eager loading
-  const tasks = await prisma.task.findMany({
-    where: whereClause,
-    select: {
-      ...selectFields,
-      User: {
-        select: {
-          name: true,
-          email: true,
+  try {
+    // Get tasks with pagination and eager loading
+    const tasks = await prisma.task.findMany({
+      where: whereClause,
+      select: {
+        ...selectFields,
+        User: {
+          select: {
+            name: true,
+            email: true,
+          },
         },
       },
-    },
-    skip: skip,
-    take: limit,
-    orderBy: { createdAt: "desc" },
-  });
+      skip: skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+    });
 
-  // Get total count for pagination metadata
-  const totalTasks = await prisma.task.count({
-    where: whereClause,
-  });
+    if (!tasks.length)
+      return res
+        .status(404)
+        .json({ message: "The task list was not found or empty." });
 
-  // Build pagination object with complete metadata
-  const pagination = {
-    page,
-    limit,
-    total: totalTasks,
-    pages: Math.ceil(totalTasks / limit),
-    hasNext: page * limit < totalTasks,
-    hasPrev: page > 1,
-  };
+    // Get total count for pagination metadata
+    const totalTasks = await prisma.task.count({
+      where: whereClause,
+    });
 
-  // Return tasks with pagination information
-  return res.status(200).json({
-    tasks,
-    pagination,
-  });
+    // Build pagination object with complete metadata
+    const pagination = {
+      page,
+      limit,
+      total: totalTasks,
+      pages: Math.ceil(totalTasks / limit),
+      hasNext: page * limit < totalTasks,
+      hasPrev: page > 1,
+    };
+
+    // Return tasks with pagination information
+    return res.status(200).json({
+      tasks,
+      pagination,
+    });
+  } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ message: "Tasks were not found." });
+    } else {
+      return next(err); // pass other errors to the global error handler
+    }
+  }
 }
 
 async function show(req, res, next) {

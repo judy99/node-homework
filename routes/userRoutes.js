@@ -10,9 +10,9 @@ const {
 
 const router = express.Router();
 router.route("/register").post(register);
+router.route("/logon").post(logon);
 
 router.use(jwtMiddleware);
-router.route("/logon").post(logon);
 router.route("/logoff").post(logoff);
 router.route("/:id").get(show);
 
