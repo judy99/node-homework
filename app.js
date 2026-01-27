@@ -17,13 +17,13 @@ app.use(
   rateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per windowMs
-  })
+  }),
 );
 
 app.use(helmet());
 
 app.use(cookieParser());
-app.use(express.json({ limit: "1kb" }));
+app.use(express.json({ limit: "1mb" }));
 
 app.use(xss());
 
@@ -54,7 +54,7 @@ app.use(errorHandler);
 
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () =>
-  console.log(`Server is listening on port ${port}...`)
+  console.log(`Server is listening on port ${port}...`),
 );
 
 server.on("error", (err) => {
