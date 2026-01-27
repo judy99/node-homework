@@ -30,7 +30,7 @@ app.use(xss());
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // your frontend
+    origin: "http://localhost:3001", // your frontend
     credentials: true, // only if you use cookies
   }),
 );
