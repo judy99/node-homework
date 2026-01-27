@@ -9,6 +9,7 @@ const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const { xss } = require("express-xss-sanitizer");
 const rateLimiter = require("express-rate-limit");
+const cors = require("cors");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -26,6 +27,13 @@ app.use(cookieParser());
 app.use(express.json({ limit: "1mb" }));
 
 app.use(xss());
+
+app.use(
+  cors({
+    origin: "http://localhost:5173", // your frontend
+    credentials: true, // only if you use cookies
+  }),
+);
 
 app.use((req, res, next) => {
   console.log("req.method: ", req.method);
