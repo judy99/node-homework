@@ -9,21 +9,63 @@ const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const { xss } = require("express-xss-sanitizer");
 const rateLimiter = require("express-rate-limit");
+const cors = require("cors");
 
 const app = express();
+
+app.use((req, res, next) => {
+  res.setHeader("X-DEPLOY-CHECK", "cors-v1");
+  next();
+});
+
 app.set("trust proxy", 1);
+
+const corsOptions = {
+  origin: ["http://localhost:3001"],
+  credentials: true,
+  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "X-CSRF-TOKEN"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+const allowedOrigin = "http://localhost:3001";
+console.log("*****req.headers.origin:", req.headers.origin);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin === allowedOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    );
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-CSRF-TOKEN");
+  }
+
+  // preflight never hits auth/csrf
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 
 app.use(
   rateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per windowMs
-  })
+  }),
 );
 
 app.use(helmet());
 
 app.use(cookieParser());
-app.use(express.json({ limit: "1kb" }));
+app.use(express.json({ limit: "1mb" }));
 
 app.use(xss());
 
@@ -54,7 +96,7 @@ app.use(errorHandler);
 
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () =>
-  console.log(`Server is listening on port ${port}...`)
+  console.log(`Server is listening on port ${port}...`),
 );
 
 server.on("error", (err) => {

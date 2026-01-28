@@ -180,7 +180,7 @@ describe("Testing JWT middleware", () => {
     const jwtCookie = jwt.sign(
       { id: 5, csrfToken: "badtoken" },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      { expiresIn: "1h" }
     );
     req.cookies = { jwt: jwtCookie };
     if (!req.headers) {
@@ -198,7 +198,7 @@ describe("Testing JWT middleware", () => {
     const jwtCookie = jwt.sign(
       { id: 5, csrfToken: "goodtoken" },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      { expiresIn: "1h" }
     );
     req.cookies = { jwt: jwtCookie };
     if (!req.headers) {
@@ -208,7 +208,7 @@ describe("Testing JWT middleware", () => {
     const next = await waitForRouteHandlerCompletion(
       jwtMiddleware,
       req,
-      saveRes,
+      saveRes
     );
     saveReq = req;
     expect(next).toHaveBeenCalled();
@@ -383,37 +383,37 @@ if (userSchema) {
     it("doesn't permit a trivial password", () => {
       const { error } = userSchema.validate(
         { name: "Bob", email: "bob@sample.com", password: "password" },
-        { abortEarly: false },
+        { abortEarly: false }
       );
       expect(
-        error.details.find((detail) => detail.context.key == "password"),
+        error.details.find((detail) => detail.context.key == "password")
       ).toBeDefined();
     });
     it("The user schema requires that an email be specified.", () => {
       const { error } = userSchema.validate(
         { name: "Bob", password: "Pa$$word20" },
-        { abortEarly: false },
+        { abortEarly: false }
       );
       expect(
-        error.details.find((detail) => detail.context.key == "email"),
+        error.details.find((detail) => detail.context.key == "email")
       ).toBeDefined();
     });
     it("The user schema does not accept an invalid email.", () => {
       const { error } = userSchema.validate(
         { name: "Bob", email: "bob_at_sample.com", password: "Pa$$word20" },
-        { abortEarly: false },
+        { abortEarly: false }
       );
       expect(
-        error.details.find((detail) => detail.context.key == "email"),
+        error.details.find((detail) => detail.context.key == "email")
       ).toBeDefined();
     });
     it("The user schema requires a password.", () => {
       const { error } = userSchema.validate(
         { name: "Bob", email: "bob@sample.com" },
-        { abortEarly: false },
+        { abortEarly: false }
       );
       expect(
-        error.details.find((detail) => detail.context.key == "password"),
+        error.details.find((detail) => detail.context.key == "password")
       ).toBeDefined();
     });
     it("The user schema requires name.", () => {
@@ -422,25 +422,25 @@ if (userSchema) {
           email: "bob@sample.com",
           password: "Pa$$word20",
         },
-        { abortEarly: false },
+        { abortEarly: false }
       );
       expect(
-        error.details.find((detail) => detail.context.key == "name"),
+        error.details.find((detail) => detail.context.key == "name")
       ).toBeDefined();
     });
     it("The name must be valid (3 to 30 characters).", () => {
       const { error } = userSchema.validate(
         { name: "B", email: "bob@sample.com", password: "Pa$$word20" },
-        { abortEarly: false },
+        { abortEarly: false }
       );
       expect(
-        error.details.find((detail) => detail.context.key == "name"),
+        error.details.find((detail) => detail.context.key == "name")
       ).toBeDefined();
     });
     it("If validation is performed on a valid user object, error comes back falsy.", () => {
       const { error } = userSchema.validate(
         { name: "Bob", email: "bob@sample.com", password: "Pa$$word20" },
-        { abortEarly: false },
+        { abortEarly: false }
       );
       expect(error).toBeFalsy();
     });
@@ -451,7 +451,7 @@ if (taskSchema) {
     it("The task schema requires a title.", () => {
       const { error } = taskSchema.validate({ isCompleted: true });
       expect(
-        error.details.find((detail) => detail.context.key == "title"),
+        error.details.find((detail) => detail.context.key == "title")
       ).toBeDefined();
     });
     it("If an isCompleted value is specified, it must be valid.", () => {
@@ -460,7 +460,7 @@ if (taskSchema) {
         isCompleted: "baloney",
       });
       expect(
-        error.details.find((detail) => detail.context.key == "isCompleted"),
+        error.details.find((detail) => detail.context.key == "isCompleted")
       ).toBeDefined();
     });
     it("If an isCompleted value is not specified but the rest of the object is valid, a default of false is provided by validation", () => {
@@ -514,7 +514,11 @@ describe("function tests of user operations", () => {
     });
     it("49. You can logon as the newly registered user.", async () => {
       const logonObj = { email: "jdeere@example.com", password: "Pa$$word20" };
-      saveRes = await agent.post("/api/users/logon").send(logonObj);
+      const token = saveRes.body.csrfToken;
+      saveRes = await agent
+        .post("/api/users/logon")
+        .set("X-CSRF-TOKEN", token)
+        .send(logonObj);
       expect(saveRes.status).toBe(200);
     });
     it("50. See if you are logged in", async () => {
