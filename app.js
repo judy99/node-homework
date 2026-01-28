@@ -14,6 +14,22 @@ const cors = require("cors");
 const app = express();
 app.set("trust proxy", 1);
 
+const corsOptions = {
+  origin: "http://localhost:3001",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-TOKEN"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ preflight
+
+// ✅ If your auth/csrf blocks OPTIONS, keep this:
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 app.use(
   rateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -27,13 +43,6 @@ app.use(cookieParser());
 app.use(express.json({ limit: "1mb" }));
 
 app.use(xss());
-
-app.use(
-  cors({
-    origin: "http://localhost:3001", // your frontend
-    credentials: true, // only if you use cookies
-  }),
-);
 
 app.use((req, res, next) => {
   console.log("req.method: ", req.method);
