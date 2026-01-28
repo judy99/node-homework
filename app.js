@@ -12,6 +12,12 @@ const rateLimiter = require("express-rate-limit");
 const cors = require("cors");
 
 const app = express();
+
+app.use((req, res, next) => {
+  res.setHeader("X-DEPLOY-CHECK", "cors-v1");
+  next();
+});
+
 app.set("trust proxy", 1);
 
 const corsOptions = {
