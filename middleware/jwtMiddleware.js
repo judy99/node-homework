@@ -8,6 +8,8 @@ const send401 = (res) => {
 };
 
 module.exports = async (req, res, next) => {
+  if (req.method === "OPTIONS") return next();
+
   const token = req?.cookies?.jwt;
   if (!token) {
     return send401(res);
