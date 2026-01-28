@@ -31,6 +31,7 @@ app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
 const allowedOrigin = "http://localhost:3001";
+console.log("*****req.headers.origin:", req.headers.origin);
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
