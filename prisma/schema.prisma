@@ -11,6 +11,7 @@ model User {
   id             Int      @id @default(autoincrement())
   email          String   @unique @db.VarChar(255)
   name           String   @db.VarChar(30)
+  testCol         String   @db.VarChar(30) @default("TEST")
   hashedPassword String   @db.VarChar(255) @map("hashed_password")
   createdAt     DateTime @default(now()) @db.Timestamp(6) @map("created_at")
   Task          Task[]
