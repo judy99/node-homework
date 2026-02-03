@@ -126,9 +126,13 @@ describe("Testing JWT middleware", () => {
       method: "POST",
     });
     saveRes = MockResponseWithCookies();
-    const jwtCookie = jwt.sign({ id: 5, csrfToken: "badToken" }, "badSecret", {
-      expiresIn: "1h",
-    });
+    const jwtCookie = jwt.sign(
+      { id: 5, csrfToken: "badToken", roles: "user" },
+      "badSecret",
+      {
+        expiresIn: "1h",
+      }
+    );
     req.cookies = { jwt: jwtCookie };
     await waitForRouteHandlerCompletion(jwtMiddleware, req, saveRes);
     expect(saveRes.statusCode).toBe(401);
@@ -140,11 +144,11 @@ describe("Testing JWT middleware", () => {
     saveRes = MockResponseWithCookies();
     // create a good jwt
     const jwtCookie = jwt.sign(
-      { id: 5, csrfToken: "badToken" },
+      { id: 5, csrfToken: "badToken", roles: "user" },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
-      },
+      }
     );
     if (!req.headers) {
       req.headers = {};
@@ -161,11 +165,11 @@ describe("Testing JWT middleware", () => {
     saveRes = MockResponseWithCookies();
     // create a good jwt
     const jwtCookie = jwt.sign(
-      { id: 5, csrfToken: "goodtoken" },
+      { id: 5, csrfToken: "goodtoken", roles: "user" },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
-      },
+      }
     );
     if (!req.headers) {
       req.headers = {};
@@ -178,7 +182,7 @@ describe("Testing JWT middleware", () => {
     const next = await waitForRouteHandlerCompletion(
       jwtMiddleware,
       req,
-      saveRes,
+      saveRes
     );
     expect(next).toHaveBeenCalled();
   });
