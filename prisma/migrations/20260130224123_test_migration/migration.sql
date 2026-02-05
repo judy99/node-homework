@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "testCol" VARCHAR(30) NOT NULL DEFAULT 'TEST';
