@@ -47,6 +47,49 @@ async function comparePassword(inputPassword, storedHash) {
   return crypto.timingSafeEqual(keyBuffer, derivedKey);
 }
 
+async function createUserWithTasks(userData) {
+  return prisma.$transaction(async (tx) => {
+    // Create user account (similar to Assignment 6, but using tx instead of prisma)
+    const newUser = await tx.user.create({
+      data: {
+        email: userData.email,
+        name: userData.name,
+        hashedPassword: userData.hashedPassword,
+      },
+      select: { id: true, email: true, name: true },
+    });
+
+    // Create 3 welcome tasks using createMany
+    const welcomeTaskData = [
+      {
+        title: "Complete your profile",
+        userId: newUser.id,
+        priority: "medium",
+      },
+      { title: "Add your first task", userId: newUser.id, priority: "high" },
+      { title: "Explore the app", userId: newUser.id, priority: "low" },
+    ];
+    await tx.task.createMany({ data: welcomeTaskData });
+
+    // Fetch the created tasks to return them
+    const welcomeTasks = await tx.task.findMany({
+      where: {
+        userId: newUser.id,
+        title: { in: welcomeTaskData.map((t) => t.title) },
+      },
+      select: {
+        id: true,
+        title: true,
+        isCompleted: true,
+        userId: true,
+        priority: true,
+      },
+    });
+    return { user: newUser, welcomeTasks };
+  });
+}
+module.exports = { register, logon, logoff, show, googleLogon };
+
 async function register(req, res, next) {
   if (!req.body) req.body = {};
   let isPerson = false;
@@ -95,48 +138,8 @@ async function register(req, res, next) {
   const { name, email, hashedPassword } = value;
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      // Create user account (similar to Assignment 6, but using tx instead of prisma)
-      const newUser = await tx.user.create({
-        data: { email, name, hashedPassword },
-        select: { id: true, email: true, name: true },
-      });
-
-      // Create 3 welcome tasks using createMany
-      const welcomeTaskData = [
-        {
-          title: "Complete your profile",
-          userId: newUser.id,
-          priority: "medium",
-        },
-        { title: "Add your first task", userId: newUser.id, priority: "high" },
-        { title: "Explore the app", userId: newUser.id, priority: "low" },
-      ];
-      await tx.task.createMany({ data: welcomeTaskData });
-
-      // Fetch the created tasks to return them
-      const welcomeTasks = await tx.task.findMany({
-        where: {
-          userId: newUser.id,
-          title: { in: welcomeTaskData.map((t) => t.title) },
-        },
-        select: {
-          id: true,
-          title: true,
-          isCompleted: true,
-          userId: true,
-          priority: true,
-        },
-      });
-
-      return { user: newUser, welcomeTasks };
-    });
-
-    // Store the user ID globally for session management (not secure for production)
-    // global.user_id = result.user.id;
+    const result = await createUserWithTasks({ email, name, hashedPassword });
     const csrfToken = setJwtCookie(req, res, result.user);
-
-    // Send response with status 201
     res.status(201);
     res.json({
       csrfToken,
@@ -179,7 +182,6 @@ async function logon(req, res) {
     if (user) {
       const isMatch = await comparePassword(password, storedHash);
       if (isMatch) {
-        // global.user_id = user.id; // the user is set to logged on.
         const csrfToken = setJwtCookie(req, res, user);
 
         return res.status(StatusCodes.OK).json({
@@ -214,12 +216,8 @@ async function googleLogon(req, res) {
       redirectUri: GOOGLE_REDIRECT_URI,
     });
 
-    console.log("req.body.code", req.body.code);
-
     const { tokens } = await googleClient.getToken(req.body.code);
     googleClient.setCredentials(tokens);
-
-    // if (!tokens) return res.status(400).json({ message: "Missing id_token" });
 
     // verify Google token
     const ticket = await googleClient.verifyIdToken({
@@ -236,87 +234,26 @@ async function googleLogon(req, res) {
 
     const googleUserEmail = String(payload.email).toLowerCase();
     const googleUserName = payload.name.trim() || googleUserEmail;
-    // - Look up by email (stable for your app)
-    // - If not, create new user
-
+    // look up by email
+    // if not, create new user with a random password
     const existingUser = await prisma.user.findUnique({
       where: { email: googleUserEmail },
     });
 
     // create a new user
     if (!existingUser) {
-      const result = await prisma.$transaction(async (tx) => {
-        const googleUser = {
-          name: googleUserName,
-          email: googleUserEmail,
-          password: "Fake_Pa$$word_for_gOOgle_l0g0n",
-        };
-
-        const { error, value } = userSchema.validate(googleUser, {
-          abortEarly: false,
-        });
-        if (error) {
-          return res.status(StatusCodes.BAD_REQUEST).json({
-            message: "Validation failed",
-            details: error.details,
-          });
-        }
-
-        value.hashedPassword = await hashPassword(value.password);
-        const { name, email, hashedPassword } = value;
-
-        const newUser = await tx.user.create({
-          data: { email, name, hashedPassword },
-          select: { name: true, email: true, id: true },
-        });
-
-        const welcomeTaskData = [
-          {
-            title: "Complete your profile",
-            userId: newUser.id,
-            priority: "medium",
-          },
-          {
-            title: "Add your first task",
-            userId: newUser.id,
-            priority: "high",
-          },
-          { title: "Explore the app", userId: newUser.id, priority: "low" },
-        ];
-
-        await tx.task.createMany({ data: welcomeTaskData });
-
-        const welcomeTasks = await tx.task.findMany({
-          where: {
-            userId: newUser.id,
-            title: { in: welcomeTaskData.map((t) => t.title) },
-          },
-          select: {
-            id: true,
-            title: true,
-            isCompleted: true,
-            userId: true,
-            priority: true,
-          },
-        });
-
-        const csrfToken = setJwtCookie(req, res, newUser);
-
-        return {
-          user: newUser,
-          welcomeTasks: welcomeTasks,
-          csrfToken: csrfToken,
-        };
+      const newUser = await createUserWithTasks({
+        email: googleUserEmail,
+        name: googleUserName,
+        hashedPassword: "Fake_Pa$$word_for_gOOgle_l0g0n",
       });
+      const csrfToken = setJwtCookie(req, res, newUser);
 
-      res.status(201);
-      res.json({
-        user: result.user,
-        welcomeTasks: result.welcomeTasks,
-        transactionStatus: "success",
-        csrfToken: result.csrfToken,
+      return res.status(201).json({
+        user: newUser.user,
+        welcomeTasks: newUser.welcomeTasks,
+        csrfToken: csrfToken,
       });
-      return;
     }
 
     // login existing user
@@ -335,7 +272,6 @@ async function googleLogon(req, res) {
 }
 
 function logoff(req, res) {
-  // global.user_id = null; // the user is set to null.
   res.clearCookie("jwt", cookieFlags(req));
   return res.sendStatus(StatusCodes.OK);
 }
@@ -374,5 +310,3 @@ async function show(req, res) {
 
   res.status(200).json(user);
 }
-
-module.exports = { register, logon, logoff, show, googleLogon };
