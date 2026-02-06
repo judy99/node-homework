@@ -6,6 +6,12 @@ const scrypt = util.promisify(crypto.scrypt);
 const prisma = require("../db/prisma");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const cookieFlags = (req) => {
   return {
@@ -22,7 +28,7 @@ const setJwtCookie = (req, res, user) => {
     csrfToken: randomUUID(),
     roles: user.roles || [],
   };
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" }); // 1 hour expiration
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" }); // 1 hour expiration
   // Set cookie.  Note that the cookie flags have to be different in production and in test.
   res.cookie("jwt", token, { ...cookieFlags(req), maxAge: 3600000 }); // 1 hour expiration
   return payload.csrfToken; // this is needed in the body returned by logon() or register()
@@ -194,6 +200,140 @@ async function logon(req, res) {
   }
 }
 
+async function googleLogon(req, res) {
+  if (!req.body || !req.body.code) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: "Authorization code is required." });
+  }
+
+  try {
+    const googleClient = new OAuth2Client({
+      clientId: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      redirectUri: GOOGLE_REDIRECT_URI,
+    });
+
+    console.log("req.body.code", req.body.code);
+
+    const { tokens } = await googleClient.getToken(req.body.code);
+    googleClient.setCredentials(tokens);
+
+    // if (!tokens) return res.status(400).json({ message: "Missing id_token" });
+
+    // verify Google token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload.email.trim()) {
+      return res
+        .status(401)
+        .json({ message: "Google user info is not verified" });
+    }
+
+    const googleUserEmail = String(payload.email).toLowerCase();
+    const googleUserName = payload.name.trim() || googleUserEmail;
+    // - Look up by email (stable for your app)
+    // - If not, create new user
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: googleUserEmail },
+    });
+
+    // create a new user
+    if (!existingUser) {
+      const result = await prisma.$transaction(async (tx) => {
+        const googleUser = {
+          name: googleUserName,
+          email: googleUserEmail,
+          password: "Fake_Pa$$word_for_gOOgle_l0g0n",
+        };
+
+        const { error, value } = userSchema.validate(googleUser, {
+          abortEarly: false,
+        });
+        if (error) {
+          return res.status(StatusCodes.BAD_REQUEST).json({
+            message: "Validation failed",
+            details: error.details,
+          });
+        }
+
+        value.hashedPassword = await hashPassword(value.password);
+        const { name, email, hashedPassword } = value;
+
+        const newUser = await tx.user.create({
+          data: { email, name, hashedPassword },
+          select: { name: true, email: true, id: true },
+        });
+
+        const welcomeTaskData = [
+          {
+            title: "Complete your profile",
+            userId: newUser.id,
+            priority: "medium",
+          },
+          {
+            title: "Add your first task",
+            userId: newUser.id,
+            priority: "high",
+          },
+          { title: "Explore the app", userId: newUser.id, priority: "low" },
+        ];
+
+        await tx.task.createMany({ data: welcomeTaskData });
+
+        const welcomeTasks = await tx.task.findMany({
+          where: {
+            userId: newUser.id,
+            title: { in: welcomeTaskData.map((t) => t.title) },
+          },
+          select: {
+            id: true,
+            title: true,
+            isCompleted: true,
+            userId: true,
+            priority: true,
+          },
+        });
+
+        const csrfToken = setJwtCookie(req, res, newUser);
+
+        return {
+          user: newUser,
+          welcomeTasks: welcomeTasks,
+          csrfToken: csrfToken,
+        };
+      });
+
+      res.status(201);
+      res.json({
+        user: result.user,
+        welcomeTasks: result.welcomeTasks,
+        transactionStatus: "success",
+        csrfToken: result.csrfToken,
+      });
+      return;
+    }
+
+    // login existing user
+    const csrfToken = setJwtCookie(req, res, existingUser);
+
+    return res.status(StatusCodes.OK).json({
+      name: existingUser.name,
+      email: existingUser.email,
+      csrfToken: csrfToken,
+    });
+  } catch (err) {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({ message: "Invalid Google token" });
+  }
+}
+
 function logoff(req, res) {
   // global.user_id = null; // the user is set to null.
   res.clearCookie("jwt", cookieFlags(req));
@@ -235,4 +375,4 @@ async function show(req, res) {
   res.status(200).json(user);
 }
 
-module.exports = { register, logon, logoff, show };
+module.exports = { register, logon, logoff, show, googleLogon };
