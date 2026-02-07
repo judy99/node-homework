@@ -242,12 +242,16 @@ async function googleLogon(req, res) {
 
     // create a new user
     if (!existingUser) {
+      const hashedPassword = await hashPassword(
+        "Fake_Pa$$word_for_gOOgle_l0g0n",
+      );
+
       const newUser = await createUserWithTasks({
         email: googleUserEmail,
         name: googleUserName,
-        hashedPassword: "Fake_Pa$$word_for_gOOgle_l0g0n",
+        hashedPassword: hashedPassword,
       });
-      const csrfToken = setJwtCookie(req, res, newUser);
+      const csrfToken = setJwtCookie(req, res, newUser.user);
 
       return res.status(201).json({
         user: newUser.user,
@@ -262,6 +266,7 @@ async function googleLogon(req, res) {
     return res.status(StatusCodes.OK).json({
       name: existingUser.name,
       email: existingUser.email,
+      roles: existingUser.roles,
       csrfToken: csrfToken,
     });
   } catch (err) {
