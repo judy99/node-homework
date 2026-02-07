@@ -387,7 +387,7 @@ For tests, the test runner uses `TEST_DATABASE_URL`.
 
 ### Link to the deployed backend
 
-## (https://node-homework-judy.onrender.com)[https://node-homework-judy.onrender.com]
+[https://node-homework-judy.onrender.com](https://node-homework-judy.onrender.com)
 
 ## License
 
