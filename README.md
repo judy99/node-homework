@@ -341,18 +341,18 @@ This is a **REST API** for a todo-list application. Users can register and log i
 
 ### Required Environment Variables
 
-| Variable               | Required        | Description                                                                             |
-| ---------------------- | --------------- | --------------------------------------------------------------------------------------- |
-| `DATABASE_URL`         | Yes             | PostgreSQL connection string for the main app (e.g. `tasklist`).                        |
-| `JWT_SECRET`           | Yes             | Secret used to sign and verify JWT cookies.                                             |
-| `PORT`                 | No              | Server port (default: `3000`).                                                          |
-| `CORS_ORIGIN`          | No              | Allowed origins, comma-separated (default: `http://localhost:3001`).                    |
-| `NODE_ENV`             | No              | `development`, `test`, or `production` (affects cookie options, etc.).                  |
-| `GOOGLE_CLIENT_ID`     | For Google auth | Google OAuth client ID.                                                                 |
-| `GOOGLE_CLIENT_SECRET` | For Google auth | Google OAuth client secret.                                                             |
-| `GOOGLE_REDIRECT_URI`  | For Google auth | OAuth redirect URI (e.g. backend callback URL).                                         |
-| `RECAPTCHA_SECRET`     | For reCAPTCHA   | Server-side reCAPTCHA secret.                                                           |
-| `RECAPTCHA_BYPASS`     | No (testing)    | If set, requests with `X-Recaptcha-Test: <value>` can bypass reCAPTCHA (e.g. in tests). |
+| Variable               | Required        | Description                                                                       |
+| ---------------------- | --------------- | --------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | Yes             | PostgreSQL connection string for the main app (e.g. `tasklist`).                  |
+| `JWT_SECRET`           | Yes             | Secret used to sign and verify JWT cookies.                                       |
+| `PORT`                 | No              | Server port (default: `3000`).                                                    |
+| `CORS_ORIGIN`          | No              | Allowed origins, comma-separated (default`http://localhost:3001`).                |
+| `NODE_ENV`             | No              | `development`, `test`, or `production` (affects cookie options, etc.).            |
+| `GOOGLE_CLIENT_ID`     | For Google auth | Google OAuth client ID.                                                           |
+| `GOOGLE_CLIENT_SECRET` | For Google auth | Google OAuth client secret.                                                       |
+| `GOOGLE_REDIRECT_URI`  | For Google auth | OAuth redirect URI (e.g. backend callback URL).                                   |
+| `RECAPTCHA_SECRET`     | For reCAPTCHA   | Server-side reCAPTCHA secret.                                                     |
+| `RECAPTCHA_BYPASS`     | No (testing)    | If set, requests with `X-Recaptcha-Test: <value>` can bypass reCAPTCHA (in tests) |
 
 For tests, the test runner uses `TEST_DATABASE_URL`.
 
@@ -371,7 +371,7 @@ For tests, the test runner uses `TEST_DATABASE_URL`.
 - **Logoff**
   - `POST /api/users/logoff` (with valid JWT) clears the auth cookie.
 
-### Extra Features in This Repo
+### Extra Features
 
 - **Role-based access control (RBAC)**
   - **Analytics** routes (`/api/analytics/*`) additionally use **role middleware**: only users with a **manager** role can access them. Roles are stored on the user (e.g. in a `roles` field) and checked after JWT verification.
@@ -385,7 +385,9 @@ For tests, the test runner uses `TEST_DATABASE_URL`.
 - **Swagger**  
   Interactive API documentation at **`/api-docs`**, generated from the OpenAPI spec (`todo-list.openapi.json`).
 
----
+### Link to the deployed backend
+
+## [https://node-homework-judy.onrender.com]https://node-homework-judy.onrender.com
 
 ## License
 
