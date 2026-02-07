@@ -298,6 +298,95 @@ git checkout -b assignment2
 
 ## Good Luck With the Class, and Happy Coding!
 
+---
+
+## About This Project
+
+### What This Project Does
+
+This is a **REST API** for a todo-list application. Users can register and log in (with email/password or Google, optionally use reCAPTCHA on registration), manage their own tasks (CRUD), also supports bulk task operations (update many / delete many by IDs). Managers can access analytics endpoints to view user stats and search tasks. The API uses JWT cookies and CSRF tokens for authentication.
+
+### Tech Stack
+
+- **Runtime:** Node.js
+- **Framework:** Express 5
+- **Database:** PostgreSQL with **Prisma** ORM
+- **Auth:** JWT (httpOnly cookie), CSRF token, optional **Google OAuth**
+- **Security:** Helmet, CORS, rate limiting, XSS sanitization (express-xss-sanitizer)
+- **Validation:** Joi
+- **Docs:** Swagger (OpenAPI) via `swagger-ui-express` and `todo-list.openapi.json`
+
+### How to Run It Locally
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+2. **Set up PostgreSQL** and create the databases (`tasklist`, `testtasklist`).
+3. **Create a `.env` file** in the project root with the required variables (see below).
+4. **Run Prisma migrations**
+   ```bash
+   npx prisma migrate deploy
+   ```
+   For development you can use `npx prisma migrate dev`.
+5. **Start the server**
+   ```bash
+   npm start
+   ```
+   Or for development with auto-reload:
+   ```bash
+   npm run dev
+   ```
+6. **Use the API** at `http://localhost:3000` (or the `PORT` you set). Interactive API docs: **`http://localhost:3000/api-docs`**.
+
+### Required Environment Variables
+
+| Variable               | Required        | Description                                                                             |
+| ---------------------- | --------------- | --------------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | Yes             | PostgreSQL connection string for the main app (e.g. `tasklist`).                        |
+| `JWT_SECRET`           | Yes             | Secret used to sign and verify JWT cookies.                                             |
+| `PORT`                 | No              | Server port (default: `3000`).                                                          |
+| `CORS_ORIGIN`          | No              | Allowed origins, comma-separated (default: `http://localhost:3001`).                    |
+| `NODE_ENV`             | No              | `development`, `test`, or `production` (affects cookie options, etc.).                  |
+| `GOOGLE_CLIENT_ID`     | For Google auth | Google OAuth client ID.                                                                 |
+| `GOOGLE_CLIENT_SECRET` | For Google auth | Google OAuth client secret.                                                             |
+| `GOOGLE_REDIRECT_URI`  | For Google auth | OAuth redirect URI (e.g. backend callback URL).                                         |
+| `RECAPTCHA_SECRET`     | For reCAPTCHA   | Server-side reCAPTCHA secret.                                                           |
+| `RECAPTCHA_BYPASS`     | No (testing)    | If set, requests with `X-Recaptcha-Test: <value>` can bypass reCAPTCHA (e.g. in tests). |
+
+For tests, the test runner uses `TEST_DATABASE_URL`.
+
+### Authentication Overview
+
+- **Register / logon (email + password)**
+  - `POST /api/users/register` and `POST /api/users/logon` validate credentials, set an **httpOnly JWT cookie**, and return a **CSRF token** in the response body.
+  - For **state-changing requests** (POST, PATCH, PUT, DELETE), the client must send the cookie (automatically) and the **`X-CSRF-TOKEN`** header with that token.
+
+- **Google logon / register**
+  - `POST /api/users/googleLogon` allows sign-in or account creation using Google OAuth. Same cookie + CSRF behavior as above once the user is authenticated.
+
+- **Protected routes**
+  - Most task and user routes (and all analytics routes) use **JWT middleware**: they require a valid JWT in the cookie and, for mutating methods, a matching CSRF token in `X-CSRF-TOKEN`.
+
+- **Logoff**
+  - `POST /api/users/logoff` (with valid JWT) clears the auth cookie.
+
+### Extra Features in This Repo
+
+- **Role-based access control (RBAC)**
+  - **Analytics** routes (`/api/analytics/*`) additionally use **role middleware**: only users with a **manager** role can access them. Roles are stored on the user (e.g. in a `roles` field) and checked after JWT verification.
+
+- **Logon and register via Google**  
+  Google OAuth flow for sign-in and account creation (`POST /api/users/googleLogon`), using `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`.
+
+- **Update many / delete many by IDs**  
+  Task API supports bulk operations: **PATCH** and **DELETE** on the task collection (e.g. with a list of IDs in the body or query) to update or delete multiple tasks at once.
+
+- **Swagger**  
+  Interactive API documentation at **`/api-docs`**, generated from the OpenAPI spec (`todo-list.openapi.json`).
+
+---
+
 ## License
 
 Copyright (c) 2025 Code the Dream
