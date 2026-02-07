@@ -276,6 +276,7 @@ function logoff(req, res) {
   return res.sendStatus(StatusCodes.OK);
 }
 
+// show user details and their 5 most recent INCOMPLETE tasks
 async function show(req, res) {
   const userId = parseInt(req.params.id);
 

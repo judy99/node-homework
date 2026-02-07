@@ -61,6 +61,7 @@ async function getUserAnalytics(req, res) {
   return;
 }
 
+// user list with their incomplete task counts, with pagination and optional search
 async function getUsersWithStats(req, res) {
   // Parse pagination parameters (similar to how you did in the task index method in section 3 above)
   // Hint: Parse page and limit from req.query, calculate skip
