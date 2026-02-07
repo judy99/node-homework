@@ -1,5 +1,10 @@
 const StatusCodes = require("http-status-codes");
-const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
+const {
+  taskSchema,
+  patchTaskSchema,
+  updateManyByIdsSchema,
+  deleteManyByIdsSchema,
+} = require("../validation/taskSchema");
 const { querySchema } = require("../validation/querySchema");
 
 const prisma = require("../db/prisma");
@@ -238,6 +243,70 @@ async function update(req, res, next) {
   }
 }
 
+/** Build where for bulk update/delete by ids */
+function buildBulkWhere(userId, ids) {
+  const where = { userId };
+  if (ids && ids.length > 0) {
+    where.id = { in: ids };
+  }
+  return where;
+}
+
+async function updateMany(req, res, next) {
+  if (!req.body) req.body = {};
+  const { error, value } = updateManyByIdsSchema.validate(req.body, {
+    abortEarly: false,
+  });
+  if (error)
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
+
+  const ids = value.ids && value.ids.length > 0 ? value.ids : null;
+  if (!ids?.length)
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Specify tasks by ids in body",
+    });
+
+  const where = buildBulkWhere(req.user.id, ids);
+  const { ids: _ids, ...data } = value;
+
+  try {
+    const result = await prisma.task.updateMany({ where, data });
+    return res.status(200).json({
+      message: "Tasks updated.",
+      count: result.count,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function deleteMany(req, res, next) {
+  if (!req.body) req.body = {};
+  const { error, value } = deleteManyByIdsSchema.validate(req.body, {
+    abortEarly: false,
+  });
+  if (error)
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
+
+  const ids = value.ids;
+  if (!ids?.length)
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Specify task ids in body.",
+    });
+
+  const where = buildBulkWhere(req.user.id, ids);
+
+  try {
+    const result = await prisma.task.deleteMany({ where });
+    return res.status(200).json({
+      message: "Tasks deleted.",
+      count: result.count,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function bulkCreate(req, res, next) {
   // Bulk create with validation
   const { tasks } = req.body;
@@ -284,4 +353,13 @@ async function bulkCreate(req, res, next) {
   }
 }
 
-module.exports = { create, deleteTask, index, update, show, bulkCreate };
+module.exports = {
+  create,
+  deleteTask,
+  index,
+  update,
+  show,
+  bulkCreate,
+  updateMany,
+  deleteMany,
+};
