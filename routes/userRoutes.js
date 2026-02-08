@@ -6,11 +6,13 @@ const {
   logon,
   logoff,
   show,
+  googleLogon,
 } = require("../controllers/userController");
 
 const router = express.Router();
 router.route("/register").post(register);
 router.route("/logon").post(logon);
+router.route("/googleLogon").post(googleLogon);
 
 router.use(jwtMiddleware);
 router.route("/logoff").post(logoff);

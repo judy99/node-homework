@@ -10,6 +10,8 @@ const helmet = require("helmet");
 const { xss } = require("express-xss-sanitizer");
 const rateLimiter = require("express-rate-limit");
 const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const openapiSpec = require("./todo-list.openapi.json");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -83,6 +85,7 @@ app.get("/health", async (req, res) => {
 app.use("/api/users", userRouter);
 app.use("/api/tasks", taskRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 app.use(errorHandlerNotFound);
 app.use(errorHandler);

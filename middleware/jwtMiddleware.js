@@ -18,7 +18,7 @@ module.exports = async (req, res, next) => {
     if (err) {
       return send401(res);
     }
-    req.user = { id: decoded.id };
+    req.user = { id: decoded.id, roles: decoded.roles || [] };
     // this is where the id is kept for subsequent use in access control.  We
     // don't use global.user_id any more!
     if (["POST", "PATCH", "PUT", "DELETE", "CONNECT"].includes(req.method)) {
